@@ -1,6 +1,5 @@
 # RxID Pill Indentification Project (Lambda-Labs12)
 ## Data Science Repository
-   Mark Oliver, Carlos Gutierrez, Ed Chin
 
 DS test endpoint: 
 http://rxid-ds.us-east-2.elasticbeanstalk.com/
