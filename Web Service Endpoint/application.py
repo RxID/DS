@@ -115,7 +115,7 @@ def nnet():
         output_info = query_from_rekog(rekog_info)
         return jsonify(output_info)
     else:
-        return jsonify("YOU just made a GET request to /nnet")
+        return jsonify("YOU just made a  GET request to /nnet")
 
 
 # __________ M A I N ________________________
