@@ -11,7 +11,7 @@ USER = os.getenv("DS_DB_USER")
 PASSWORD = os.getenv("DS_DB_PASSWORD")
 HOST = os.getenv("DB_HOST")
 PORT = "5439"
-SCHEMA = "public" #default is "public"
+SCHEMA = "public" # default schema is "public"
 
 # ________ Connection to Redshift and Starting Session ___
 connection_string = "redshift+psycopg2://%s:%s@%s:%s/%s" % (USER,PASSWORD,HOST,str(PORT),DATABASE)
