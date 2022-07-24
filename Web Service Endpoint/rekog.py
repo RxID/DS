@@ -11,12 +11,10 @@ import cv2
 
 load_dotenv()
 
-key_id = os.getenv("AWS_ACCESS_KEY_ID")
-secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-reg_ion = os.getenv("AWS_DEFAULT_REGION")
-client = boto3.client('rekognition', region_name=reg_ion,
-                    aws_access_key_id=key_id,
-                    aws_secret_access_key=secret_key)
+client = boto3.client('rekognition', 
+                    region_name=os.getenv("AWS_DEFAULT_REGION"),
+                    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+                    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"))
 
 
 # ____  Filter to increase image contrast  ______

@@ -121,6 +121,7 @@ CSV/Pills.TEST.csv
 Web Service Endpoint/BotoUser.credentials.csv
 BotoUser.credentials.csv
 aws.rxidds.pwd
+RekogUser1_accessKeys.csv
 Web Service Endpoint/nonmatch_unique.txt
 Web Service Endpoint/vulnerablilites.txt
 Web Service Endpoint/aws.rekog.pwd
