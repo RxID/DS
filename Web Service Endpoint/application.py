@@ -1,44 +1,25 @@
 """
-Main application and routing logic
+_______ Main application and routing logic ______
+Dependencies:
+    - DB server host must be running
+    - conda activate  'environment1'
 """
-# _____ imports _____________
-from flask import Flask, request, render_template, jsonify, url_for
-from joblib import load
+# _____ imports _________
+from flask import Flask, request, render_template, jsonify
 from flask_cors import CORS
-import pandas as pd
-import json
 
 # ______ Module imports _____
-from rxid_util import parse_input
-from rds_lib import db_connect, query_sql_data, query_from_rekog
+from rxid_util import file_upload
+from rds_lib import query_sql_data, query_from_rekog
 from rekog import post_rekog, post_rekog_with_filter
-from nnet import shape_detect
-from ocr_site import allowed_image, add_to_s3, file_upload
-
+# from nnet import shape_detect
 
 """ create + config Flask app obj """
 application = Flask(__name__)
 CORS(application)
 
-# ___________ Pill Display Layout ___________
-# posts = [
-#     {
-#         'author': 'Carlos Gutierrez',
-#         'title': '1st Post',
-#         'content': 'This is the first post in here.',
-#         'date_posted': 'June 14, 2019'
-#     },
-#     {
-#         'author': 'Carlos Gutierrez',
-#         'title': '2nd Post',
-#         'content': 'This is the second post in here.',
-#         'date_posted': 'June 17, 2019'
-#     }
-# ]
-
-
-
 # ______________ R O U T E S  _____________________
+
 # _________ / HOME  _________________
 @application.route("/")
 def index():
@@ -50,11 +31,11 @@ def index():
 def upload():
     # Check if request is POST and the request has files (not empty)
     if request.method == "POST" and request.files:
-        # file_upload returns dict with list of S3 images
+        # file_upload returns dict with list of images
         data = file_upload()
 
         print('rekog started - params:', data)
-        rekog_info = post_rekog(data)
+        rekog_info = post_rekog_with_filter(data)
         # shape_info = shape_detect(data)
         print('rekog complete - found:', rekog_info)
         output_json = query_from_rekog(rekog_info)
@@ -95,8 +76,8 @@ def rekog():
     if request.method == 'POST':
         post_params = request.get_json(force=True)
         print('rekog started - params:', post_params)
-        rekog_info = post_rekog(post_params)
-        shape_info = shape_detect(post_params)
+        rekog_info = post_rekog_with_filter(post_params)
+        # shape_info = shape_detect(post_params)
         print('rekog complete - found:', rekog_info)
         output_info = query_from_rekog(rekog_info)
         return jsonify(output_info)
@@ -128,6 +109,8 @@ if __name__ == '__main__':
     #  --- for terminal debugging ------
     # __________________________________________________
     # to launch from terminal :
+    #    conda activate environ1 
+    #    verify DB host availability
     #    change line 25 to  application.run(debug=True)
     #    cd to folder (where application.py resides)
     #    run >python application.py

@@ -9,7 +9,7 @@ load_dotenv()
 DATABASE = os.getenv("DS_DB_NAME")
 USER = os.getenv("DS_DB_USER")
 PASSWORD = os.getenv("DS_DB_PASSWORD")
-HOST = os.getenv("DB_HOST")
+HOST = os.getenv("DS_DB_HOST")
 PORT = "5439"
 SCHEMA = "public" # default schema is "public"
 

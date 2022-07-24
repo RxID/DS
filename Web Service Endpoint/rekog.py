@@ -5,14 +5,13 @@ Source code:
 https://github.com/labs12-rxid/DS/blob/master/text_detection_AWSRekognition.ipynb
 
 print(cv2.getBuildInformation())
-
 '''
 
-import urllib.request
-import json
+#import urllib.request
+#import json
 import re
 import boto3
-import numpy as np
+#import numpy as np
 from dotenv import load_dotenv
 import os
 import cv2
@@ -64,7 +63,7 @@ def add_contrast(image_path):
 def post_rekog_with_filter(pic_json, con_fidence=70):
    
     # -------------Getting list of image file names -------------
-    imageURL_list = pic_json.get("image_locations")
+    imageURL_list = pic_json.get("image_files")
     # print(f'imageURL_list {imageURL_list}')
      
     # ------------- Text from image(s) uploaded by user -------------
@@ -72,25 +71,17 @@ def post_rekog_with_filter(pic_json, con_fidence=70):
     # ------------- text read from image(s) with contrast filter -------------
     all_filter_text = []
     
-    ctr1 = 10000
-    ctr2 = 10001
+    ctr = 10001
     for imageURL in imageURL_list:
         if imageURL != "":
-            # ------------- Saving image URL locally -------------
-            ctr1 += 2
-            temp_img = str(ctr1) + ".jpg"
-            urllib.request.urlretrieve(imageURL, temp_img)
-            imageFile = './' + temp_img
-
+            imageFile = imageURL
             # ------------- Detecting text from original image ------------
             with open(imageFile, 'rb') as image:
                 # !!!!!!  WRAP THIS IN A TRY / CATCH !!!!!!!!!
                 print('detect started', imageFile)
                 response = client.detect_text(Image={'Bytes': image.read()})
                 print('detect completed', imageFile)
-
-            # ------------- Detected Text (List of Dictionaries) -------------
-            textDetections = response['TextDetections']
+            textDetections = response['TextDetections'] #  Detected Text (List of Dicts)
 
             # ------------- Parsing Through Detected Text and 
             # Making list of Unique Sets of Text Dectected -------------
@@ -104,40 +95,39 @@ def post_rekog_with_filter(pic_json, con_fidence=70):
             all_text.append(text_set) 
             print('parsed text :', all_text)
 
-
-            # ------------- Detecting text from filtered image ------------
+            # ____________ Detecting text from filtered image __________
             print('filtering started :', imageFile)
             filtered_img = add_contrast(imageFile)
             print('filtering completed :', imageFile)
             
-            # ------------- Saving image URL locally -------------
-            ctr2 += 2
-            temp_img = str(ctr2) + ".jpg"
+            # _____________ Saving image URL locally _____________
+            ctr += 1
+            temp_img = str(ctr) + ".jpg"
             cv2.imwrite(temp_img, filtered_img)
-            imageFile2 = './' + temp_img
+            imageFile2 = temp_img
             print('contrasted image:', imageFile2)
-            
             with open(imageFile2, 'rb') as image:
                 # !!!!!!  WRAP THIS IN A TRY / CATCH !!!!!!!!!
                 print('start detecting contrasted image:', imageFile2)
                 response2 = client.detect_text(Image={'Bytes': image.read()}) 
                 print('detect complete - contrasted image:', imageFile2)
 
-            # ------------- Detected Text (List of Dictionaries) -------------
+            # _______ Detected Text (List of Dictionaries) _________
             textDetections2 = response2['TextDetections']
 
-            # ------------- Parsing Through Detected Text and 
-            # Making list of Unique Sets of Text Dectected -------------
+            #  ______ Parse through & create set of detected text ______
             text_found2 = []
-
             for text in textDetections2:
                 if text['Confidence'] > con_fidence:
                     text_found2.append(text['DetectedText'])
-            
             text_set2 = list(set(text_found2))
 
-            # ------------- Appending detected text in image to "all_text" list ------
-            all_filter_text.append(text_set2) 
+            # ____ Appending detected text in image to "all_text" list ______
+            all_filter_text.append(text_set2)
+
+            # ___ remove images ___
+            # os.remove(imageFile)
+            # os.remove(imageFile2)
         else:
             continue
             
@@ -176,23 +166,24 @@ def post_rekog_with_filter(pic_json, con_fidence=70):
 
 def post_rekog(pic_json, con_fidence=70):
     # Getting list of image file names
-    imageURL_list = pic_json.get("image_locations")
+    imageURL_list = pic_json.get("image_files")
 
-    # text from image(s) uploaded by user
+    # text from uploaded image(s)
     all_text = []
     
     # Looping through image(s)
     ctr1 = 10000
     for imageURL in imageURL_list:
+        print(imageURL)
         if imageURL != "":
-            # Saving image URL locally
-            ctr1 += 1
-            temp_img = str(ctr1) + ".jpg"
-            urllib.request.urlretrieve(imageURL, temp_img)
-            imageFile = './' + temp_img
+            # ____  Saving image URL locally _____
+            # ctr1 += 1
+            # temp_img = str(ctr1) + ".jpg"
+            # urllib.request.urlretrieve(imageURL, temp_img)
+            # imageFile = './' + temp_img
             
+            imageFile = imageURL
             # ------------- Detecting text from original image ------------
-            
             with open(imageFile, 'rb') as image:
                 # !!!!!!  WRAP THIS IN A TRY / CATCH !!!!!!!!!
                 print('detect started', imageFile)
@@ -212,6 +203,7 @@ def post_rekog(pic_json, con_fidence=70):
 
             # Appending detected text in image to "all_text" list
             all_text.append(text_set) 
+            os.remove(imageFile)  # remove uploaded images
         else:
             continue
             
@@ -239,8 +231,8 @@ def post_rekog(pic_json, con_fidence=70):
 
 # __________ M A I N ________________________
 if __name__ == '__main__':
-    data = {"image_locations": ["https://s3.us-east-2.amazonaws.com/firstpythonbucketac60bb97-95e1-43e5-98e6-0ca294ec9aad/adderall.jpg", ""]}
-    # data = {"image_locations": ["https://raw.githubusercontent.com/ed-chin-git/ed-chin-git.github.io/master/sample_pill_image.jpg", ""]}
+    # data = {"image_locations": ["https://s3.us-east-2.amazonaws.com/firstpythonbucketac60bb97-95e1-43e5-98e6-0ca294ec9aad/adderall.jpg", ""]}
+    data = {"image_locations": ["https://raw.githubusercontent.com/ed-chin-git/ed-chin-git.github.io/master/sample_pill_image.jpg", ""]}
     # data = {"image_locations": ["https://s3.us-east-2.amazonaws.com/firstpythonbucketac60bb97-95e1-43e5-98e6-0ca294ec9aad/img2b.JPG",
     #                            "https://s3.us-east-2.amazonaws.com/firstpythonbucketac60bb97-95e1-43e5-98e6-0ca294ec9aad/img2b.JPG"]}
     print(post_rekog(data))

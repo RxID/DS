@@ -9,10 +9,9 @@ http://rxidpython-testing.us-east-1.elasticbeanstalk.com/
 http://rxidpython.rhpafm2cmr.us-east-1.elasticbeanstalk.com
 
 
-Database hosted on AWS-RDS
-
-Host: rxidds.cqqygklpjkea.us-east-2.rds.amazonaws.com 
-
+## Database hosted on AWS-RDS
+Hostname/Endpoint: database-rxid.cmbsgdhddhpx.us-east-1.rds.amazonaws.com
 Port: 5432
-
-DB name: rxidDS 
+DB identifier: database-rxidD
+DB Name: rxid
+DB User: rxiduser

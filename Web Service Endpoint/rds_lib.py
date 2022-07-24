@@ -1,12 +1,9 @@
-import psycopg2
-from psycopg2.extras import RealDictCursor
 from sqlalchemy import create_engine
 import pandas as pd
 from itertools import permutations
-import json
-from dotenv import load_dotenv
+import urllib.parse
 import os
-
+from dotenv import load_dotenv
 load_dotenv()
 
 # ______query_from rekog __________
@@ -19,8 +16,8 @@ def query_from_rekog(rekog_results):
         # add text strings longer than 3
         if len(text_str) > 3:
             results.append(text_str)
-    #  Limit to only the top three
-    results = results[:3]
+    #  Limit result
+    results = results[:5]
     
     
     #   If no text_strings longer than 3 chars  
@@ -33,11 +30,12 @@ def query_from_rekog(rekog_results):
 
     total_results = []
     for result in results:
-        print('querying :', result)
+        print('querying DB :', result)
         qry_r = query_sql_data({
             "pill_name": "",
             "imprint": result,
-            "color": "", "shape": ""
+            "color": "",
+            "shape": ""
             })
         if qry_r == '':
             continue
@@ -102,7 +100,7 @@ def query_sql_data(parameter_list):
         query = query +" medicine_name ILIKE '%%"+pill_name.upper()+"%%'"
         ctr +=1
 
-    query = query + " LIMIT 25;"       
+    query = query + " LIMIT 15;"       
     """
         WHERE splimprint  ILIKE ''       im_print
         AND splshape_text ILIKE 'OVAL'   shape_text
@@ -131,14 +129,16 @@ def query_sql_data(parameter_list):
 
 #  ____________  CONNECT TO DATABASE ___________________
 def db_connect(): 
-    # __ Connect to AWS-RDS(postgres) (SQLalchemy.create_engine) ____
-    dbname = os.getenv("DS_DB_NAME")
-    user = os.getenv("DS_DB_USER")
-    host = os.getenv("DS_DB_HOST")
-    passw = os.getenv("DS_DB_PASSWORD")
-    pgres_str = 'postgresql+psycopg2://'+user+':'+passw+'@'+host+'/'+dbname
+    # __ Connect to postgres server (SQLalchemy.create_engine) ____
+    dbname = os.getenv("LOCAL_DB_NAME")
+    user = os.getenv("LOCAL_DB_USER")
+    host = os.getenv("LOCAL_DB_HOST")
+    port = os.getenv("LOCAL_DB_PORT")
+    passw = urllib.parse.quote_plus(os.getenv("LOCAL_DB_PASSWORD")) # converts any special characters in password
+    pgres_str = 'postgresql+psycopg2://'+user+':'+passw+'@'+host+':'+port+'/'+dbname
     pgres_engine = create_engine(pgres_str)
     return pgres_engine
+
 
 # ______  return colors, shapes list in reponse to GET request from /rxdata
 def get_colors_shapes():
