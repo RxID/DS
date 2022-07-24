@@ -1,17 +1,10 @@
 '''
-Python Script to detect imprinted text on pill images using AWS Rekognition.
-
-Source code:
-https://github.com/labs12-rxid/DS/blob/master/text_detection_AWSRekognition.ipynb
+Detect imprinted text on pill images using AWS Rekognition.
 
 print(cv2.getBuildInformation())
 '''
-
-#import urllib.request
-#import json
 import re
 import boto3
-#import numpy as np
 from dotenv import load_dotenv
 import os
 import cv2
@@ -26,7 +19,7 @@ client = boto3.client('rekognition', region_name=reg_ion,
                     aws_secret_access_key=secret_key)
 
 
-# Filter to increase image contrast
+# ____  Filter to increase image contrast  ______
 def add_contrast(image_path):
     print('add_contrast: started :', image_path)
     #-----Reading the image-----------------------------------------------------
@@ -59,82 +52,66 @@ def add_contrast(image_path):
     return image_contrast
 
 
-# ____________ Text Detection Function ______________
+# ____________ Text Detection Functions ______________
 def post_rekog_with_filter(pic_json, con_fidence=70):
-   
-    # -------------Getting list of image file names -------------
-    imageURL_list = pic_json.get("image_files")
-    # print(f'imageURL_list {imageURL_list}')
-     
-    # ------------- Text from image(s) uploaded by user -------------
-    all_text = []
-    # ------------- text read from image(s) with contrast filter -------------
-    all_filter_text = []
-    
-    ctr = 10001
+    imageURL_list = pic_json.get("image_files")   #  Get list of image file names
+    all_text = []        # store text from image(s)
+    all_filter_text = [] # store text from enhanced image
+    ctr = 0
     for imageURL in imageURL_list:
         if imageURL != "":
-            imageFile = imageURL
             # ------------- Detecting text from original image ------------
+            imageFile = imageURL
             with open(imageFile, 'rb') as image:
                 # !!!!!!  WRAP THIS IN A TRY / CATCH !!!!!!!!!
                 print('detect started', imageFile)
                 response = client.detect_text(Image={'Bytes': image.read()})
                 print('detect completed', imageFile)
             textDetections = response['TextDetections'] #  Detected Text (List of Dicts)
-
-            # ------------- Parsing Through Detected Text and 
-            # Making list of Unique Sets of Text Dectected -------------
+            #  ______ Parse through & create set of detected text ______
             text_found = []
             for text in textDetections:
                 if text['Confidence'] > con_fidence:
                     text_found.append(text['DetectedText'])
             text_set = list(set(text_found))
-
-            # ------------- Appending detected text in image to "all_text" list --------
+            # _______ Append detected text to "all_text" list ___
             all_text.append(text_set) 
             print('parsed text :', all_text)
-
-            # ____________ Detecting text from filtered image __________
-            print('filtering started :', imageFile)
+           
+            # _________ create enhanced image _____________
+            print('image enhance started :', imageFile)
             filtered_img = add_contrast(imageFile)
-            print('filtering completed :', imageFile)
-            
-            # _____________ Saving image URL locally _____________
+            print('image enhance completed :', imageFile)
             ctr += 1
-            temp_img = str(ctr) + ".jpg"
+            temp_img = "filtered" + str(ctr) + ".jpg"
             cv2.imwrite(temp_img, filtered_img)
             imageFile2 = temp_img
-            print('contrasted image:', imageFile2)
+            print('enhanced image:', imageFile2)
+            # ___ Detecting text from enhanced image __
             with open(imageFile2, 'rb') as image:
                 # !!!!!!  WRAP THIS IN A TRY / CATCH !!!!!!!!!
-                print('start detecting contrasted image:', imageFile2)
+                print('start detecting enhanced image:', imageFile2)
                 response2 = client.detect_text(Image={'Bytes': image.read()}) 
-                print('detect complete - contrasted image:', imageFile2)
-
-            # _______ Detected Text (List of Dictionaries) _________
-            textDetections2 = response2['TextDetections']
-
+                print('detect complete - enhanced image:', imageFile2)
+            textDetections2 = response2['TextDetections']    # LIST OF DICTS
             #  ______ Parse through & create set of detected text ______
             text_found2 = []
             for text in textDetections2:
                 if text['Confidence'] > con_fidence:
                     text_found2.append(text['DetectedText'])
             text_set2 = list(set(text_found2))
-
-            # ____ Appending detected text in image to "all_text" list ______
+            # ____ Appending detected text in image to "all_filter_text" list ______
             all_filter_text.append(text_set2)
 
-            # ___ remove images ___
-            # os.remove(imageFile)
-            # os.remove(imageFile2)
+            # ___ remove temp images ___
+            os.remove(imageFile)
+            os.remove(imageFile2)
         else:
             continue
-            
+    
     # ------------- Flattening 'all_text' (list of lists) into 1 list -------------
     text_list = [text for sublist in all_text for text in sublist]
     text_list = list(set(text_list))
-    
     text_list2 = [text for sublist in all_filter_text for text in sublist]
     text_list2 = list(set(text_list2))
     # ------------- Splitting any text blob that may have digits and numbers together ----
@@ -142,22 +119,17 @@ def post_rekog_with_filter(pic_json, con_fidence=70):
     for each in text_list:
         num_split = re.findall(r'[A-Za-z]+|\d+', each)
         unique_list.append(num_split)
-        
     unique_list2 = []
     for each in text_list2:
         num_split = re.findall(r'[A-Za-z]+|\d+', each)
         unique_list2.append(num_split)
-
     # ------------- Flattening again into one list with just unique values -------------
     unique_list = [text for sublist in unique_list for text in sublist]
     unique_list = list(set(unique_list))
-    
     unique_list2 = [text for sublist in unique_list for text in sublist]
     unique_list2 = list(set(unique_list))
-    
     # ------------- Return 'final_list' -------------
     final_list = set(unique_list + unique_list2)
-    
     # If 'final_list' is empty, return empty set
     if len(final_list) == 0:
         return {}
@@ -165,44 +137,27 @@ def post_rekog_with_filter(pic_json, con_fidence=70):
 
 
 def post_rekog(pic_json, con_fidence=70):
-    # Getting list of image file names
-    imageURL_list = pic_json.get("image_files")
-
-    # text from uploaded image(s)
-    all_text = []
-    
+    imageURL_list = pic_json.get("image_files")   # Get list of image file names
+    all_text = []  # store text from uploaded image(s)
     # Looping through image(s)
-    ctr1 = 10000
     for imageURL in imageURL_list:
         print(imageURL)
         if imageURL != "":
-            # ____  Saving image URL locally _____
-            # ctr1 += 1
-            # temp_img = str(ctr1) + ".jpg"
-            # urllib.request.urlretrieve(imageURL, temp_img)
-            # imageFile = './' + temp_img
-            
             imageFile = imageURL
-            # ------------- Detecting text from original image ------------
+            # ___ Detecting text from original image ___
             with open(imageFile, 'rb') as image:
                 # !!!!!!  WRAP THIS IN A TRY / CATCH !!!!!!!!!
                 print('detect started', imageFile)
                 response = client.detect_text(Image={'Bytes': image.read()})
                 print('detect completed', imageFile)
-            # Detected Text (List of Dictionaries)
-            textDetections = response['TextDetections']
-
-            # Parsing Through Detected Text and 
-            # Making list of Unique Sets of Text Dectected
+            textDetections = response['TextDetections']  #(List of Dictionaries)
+            # Parse through and create set of Detected Text
             text_found = []
             for text in textDetections:
                 if text['Confidence'] > con_fidence:
                     text_found.append(text['DetectedText'])
-            
             text_set = list(set(text_found))
-
-            # Appending detected text in image to "all_text" list
-            all_text.append(text_set) 
+            all_text.append(text_set)   # Append detected text to "all_text" list
             os.remove(imageFile)  # remove uploaded images
         else:
             continue
@@ -210,20 +165,16 @@ def post_rekog(pic_json, con_fidence=70):
     # Flattening 'all_text' (list of lists) into 1 list
     text_list = [text for sublist in all_text for text in sublist]
     text_list = list(set(text_list))
-
     # Splitting any text blob that may have digits and numbers together
     unique_list = []
     for each in text_list:
         num_split = re.findall(r'[A-Za-z]+|\d+', each)
         unique_list.append(num_split)
-
     # Flattening again into one list with just unique values
     unique_list = [text for sublist in unique_list for text in sublist]
     unique_list = list(set(unique_list))
-
     # Return 'final_list'
     final_list = set(unique_list)
-    
     # If 'final_list' is empty return empty set
     if len(final_list) == 0:
         return {}
